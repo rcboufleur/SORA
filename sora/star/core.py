@@ -299,15 +299,17 @@ class Star(MetaStar):
             except Exception as e:
                 raise ValueError(f"Search by code failed: {e}")
         elif hasattr(self, 'coord') and self.coord:
-            for radius in [1, 2, 4, 8, 16, 32] * u.arcsec:
+            search_radii = [1, 2, 4, 8, 16, 32] * u.arcsec
+
+            for radius in search_radii:
                 try:
                     catalogue = catalog.search_star(coord=self.coord, radius=radius)
                     if catalogue and len(catalogue) > 0:
                         break
+                    if radius < max(search_radii):
+                        print(f"Retrying search with a larger radius: {radius * 2}", end="\r")
                 except Exception as e:
                     warnings.warn(f"Search failed at radius {radius}: {e}")
-                if radius < 32 * u.arcsec:
-                    print(f"Retrying search with a larger radius: {radius*2}", end="\r")
                 
             if not catalogue or len(catalogue) == 0:
                 raise ValueError('No star was found. It does not exist or VizieR is out.')
