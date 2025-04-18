@@ -290,12 +290,27 @@ class Star(MetaStar):
         catalog : `VizierCatalogue`
             The catalogue to download data. It can be ``'gaiadr2'``, ``'gaiaedr3'`` or ``'gaiadr3'``.
         """
-        if hasattr(self, 'code'):
-            catalogue = catalog.search_star(code=self.code)
+        catalogue = None
+
+        if hasattr(self, 'code') and self.code:
+            try:
+                catalogue = catalog.search_star(code=self.code)
+            except Exception as e:
+                raise ValueError(f"Search by code failed: {e}")
+        elif hasattr(self, 'coord') and self.coord:
+            for radius in [1, 2, 4, 8, 16, 32] * u.arcsec:
+                try:
+                    catalogue = catalog.search_star(coord=self.coord, radius=radius)
+                    if catalogue and len(catalogue) > 0:
+                        break
+                except Exception as e:
+                    warnings.warn(f"Search failed at radius {radius}: {e}")
+                print(f"Retrying search with a larger radius: {radius*2}", end="\r")
+            if not catalogue or len(catalogue) == 0:
+                raise ValueError('No star was found. It does not exist or VizieR is out.')
         else:
-            catalogue = catalog.search_star(coord=self.coord, radius=1 * u.arcsec)
-        if len(catalogue) == 0:
-            raise ValueError('No star was found. It does not exist or VizieR is out.')
+            raise ValueError('No `code` or `coord` attribute provided on the object.')
+
         catalogue = catalogue[0]
         if len(catalogue) > 1:
             if self._verbose:
