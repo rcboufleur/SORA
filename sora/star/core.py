@@ -284,6 +284,7 @@ class Star(MetaStar):
 
     def __searchgaia(self, catalog):
         """Searches for the star position in the Gaia catalogue and save information.
+        If coord is given, iterates up to 32 arcsec radius to find the star.
 
         Parameters
         ----------
@@ -305,7 +306,9 @@ class Star(MetaStar):
                         break
                 except Exception as e:
                     warnings.warn(f"Search failed at radius {radius}: {e}")
-                print(f"Retrying search with a larger radius: {radius*2}", end="\r")
+                if radius < 32 * u.arcsec:
+                    print(f"Retrying search with a larger radius: {radius*2}", end="\r")
+                
             if not catalogue or len(catalogue) == 0:
                 raise ValueError('No star was found. It does not exist or VizieR is out.')
         else:
